@@ -42,17 +42,12 @@ vdf_versions = {}
 
 host_info = {}
 
-#Request all the events with an application name of powershell.exe
+#Request all sensors
 uri = '%s/integrationServices/v3/device' % (url)
 headers = {'X-Auth-Token': token}
 r = requests.get(uri, headers=headers)
 foo = r.json()
 
-'''for bar in foo['results']:
-	pp.pprint(bar)
-
-sys.exit()
-'''
 
 # Iterate over the results 
 for bar in foo['results']:
@@ -71,23 +66,28 @@ for bar in foo['results']:
 		if bar['avEngine']:
 			vdf_version = bar['avEngine'].split(':')[2]
 			vdf_version = vdf_version.replace('vdf.','')
-
-			vdf_url = 'http://vdf.carbonblackse.com'
-			vdf_uri = '%s/api/%s' % (vdf_url, vdf_version)
-			
-			vdf_r = requests.get(vdf_uri)
-			
-			if vdf_r.status_code == 200:
-				vdf_date = vdf_r.json().values()[0]
-				vdf_list = vdf_date.split('-')
-				today = datetime.date.today()
-				a = datetime.date(int(vdf_list[0]), int(vdf_list[1]), int(vdf_list[2]))
-				vdf_date_diff = (today - a).days
+			if vdf_version in vdf_versions.keys():
+				vdf_date_diff = vdf_versions[vdf_version]
 			else:
-				vdf_date_diff = ''
+				vdf_url = 'http://vdf.carbonblackse.com'
+				vdf_uri = '%s/api/%s' % (vdf_url, vdf_version)
+			
+				vdf_r = requests.get(vdf_uri)
+			
+				if vdf_r.status_code == 200:
+					vdf_date = vdf_r.json().values()[0]
+					vdf_list = vdf_date.split('-')
+					today = datetime.date.today()
+					a = datetime.date(int(vdf_list[0]), int(vdf_list[1]), int(vdf_list[2]))
+					vdf_date_diff = (today - a).days
+					vdf_versions[vdf_version] = vdf_date_diff
+				else:
+					vdf_date_diff = None
 		else:
-			vdf_date_diff = ''
+			vdf_date_diff = None
+		
 		host_info[bar['deviceId']]['vdfDateDiff'] = vdf_date_diff
+		
 	except KeyError:
 		pass
 	
