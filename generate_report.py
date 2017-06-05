@@ -3,7 +3,6 @@
 import os
 import sys
 import datetime
-import time
 import requests
 import json
 import pprint
@@ -46,28 +45,28 @@ host_info = {}
 uri = '%s/integrationServices/v3/device' % (url)
 headers = {'X-Auth-Token': token}
 r = requests.get(uri, headers=headers)
-foo = r.json()
+reply = r.json()
 
 
 # Iterate over the results 
-for bar in foo['results']:
+for sensor in reply['results']:
 	#Get the eventId for each result
 	try:
-		host_info[bar['deviceId']] = {}
-		host_info[bar['deviceId']]['avEngine'] = bar['avEngine']
-		host_info[bar['deviceId']]['avStatus'] = bar['avStatus']
-		host_info[bar['deviceId']]['lastContact'] = bar['lastContact']
-		host_info[bar['deviceId']]['name'] = bar['name']
-		host_info[bar['deviceId']]['sensorStates'] = bar['sensorStates']
-		host_info[bar['deviceId']]['status'] = bar['status']
-		host_info[bar['deviceId']]['policyName'] = bar['policyName']
+		host_info[sensor['deviceId']] = {}
+		host_info[sensor['deviceId']]['avEngine'] = sensor['avEngine']
+		host_info[sensor['deviceId']]['avStatus'] = sensor['avStatus']
+		host_info[sensor['deviceId']]['lastContact'] = sensor['lastContact']
+		host_info[sensor['deviceId']]['name'] = sensor['name']
+		host_info[sensor['deviceId']]['sensorStates'] = sensor['sensorStates']
+		host_info[sensor['deviceId']]['status'] = sensor['status']
+		host_info[sensor['deviceId']]['policyName'] = sensor['policyName']
 	
-		# avEngine': u'4.5.2.234-ave.8.3.44.80:avpack.8.4.2.64:vdf.8.14.10.126'	
-		if bar['avEngine']:
-			vdf_version = bar['avEngine'].split(':')[2]
+		# Example: avEngine': u'4.5.2.234-ave.8.3.44.80:avpack.8.4.2.64:vdf.8.14.10.126'	
+		if sensor['avEngine']:
+			vdf_version = sensor['avEngine'].split(':')[2]
 			vdf_version = vdf_version.replace('vdf.','')
 			if vdf_version in vdf_versions.keys():
-				vdf_date_diff = vdf_versions[vdf_version]
+				vdf_age = vdf_versions[vdf_version]
 			else:
 				vdf_url = 'http://vdf.carbonblackse.com'
 				vdf_uri = '%s/api/%s' % (vdf_url, vdf_version)
@@ -79,14 +78,14 @@ for bar in foo['results']:
 					vdf_list = vdf_date.split('-')
 					today = datetime.date.today()
 					a = datetime.date(int(vdf_list[0]), int(vdf_list[1]), int(vdf_list[2]))
-					vdf_date_diff = (today - a).days
-					vdf_versions[vdf_version] = vdf_date_diff
+					vdf_age = (today - a).days
+					vdf_versions[vdf_version] = vdf_age
 				else:
-					vdf_date_diff = None
+					vdf_age = None
 		else:
-			vdf_date_diff = None
+			vdf_age = None
 		
-		host_info[bar['deviceId']]['vdfDateDiff'] = vdf_date_diff
+		host_info[sensor['deviceId']]['vdfAge'] = vdf_age
 		
 	except KeyError:
 		pass
